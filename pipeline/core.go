@@ -3,9 +3,11 @@ package pipeline
 import (
 	"context"
 	"github.com/mattn/go-ieproxy"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -230,6 +232,8 @@ func newDefaultHTTPClient() *http.Client {
 func newDefaultHTTPClientFactory() Factory {
 	return FactoryFunc(func(next Policy, po *PolicyOptions) PolicyFunc {
 		return func(ctx context.Context, request Request) (Response, error) {
+			request.URL.RawQuery = strings.ReplaceAll(request.URL.RawQuery, "+", "%20")
+			ioutil.WriteFile("/tmp/porter/request.txt", []byte(request.URL.String()+"\n"+request.URL.RawQuery), 0644)
 			r, err := pipelineHTTPClient.Do(request.WithContext(ctx))
 			if err != nil {
 				err = NewError(err, "HTTP request failed")
